@@ -35,7 +35,7 @@ class FeedforwardNetwork(nn.Module):
             'relu': nn.ReLU(),
             'tanh': nn.Tanh(),
         }
-        activation_function
+        activation_function = None
         # verify if the activation_type (str) is defined in the map. Otherwise, default ReLU
         if activation_type.lower() not in activation_map:
             print(
@@ -59,13 +59,14 @@ class FeedforwardNetwork(nn.Module):
         out_sizes = [hidden_size] * layers + [n_classes]
 
         #  --- Build the Network structure ---
-        network_layers = []
+        #holds the sequence of "commands" that should be done in the model (ex. Linear, activation, dropout, Linear, ...)
+        ffn_sequence  = []
 
         # Iterate through input and output sizes to generate linear layers with defined n_in inputs and n_out outputs
         # i is the index of the layer we are creating in a loop
         for i, (n_in, n_out) in enumerate(zip(in_sizes, out_sizes)):
             # create linear layer and add to network_layers
-            network_layers.append(nn.Linear(n_in, n_out))
+            ffn_sequence.append(nn.Linear(n_in, n_out))
             
             # if the current layer index is equal to the last possible index, given by len(in_sizes) - 1 or len(out_sizes) - 1
             # then we are currently iterating the output layer, which we dont want to apply Dropout or activation function after
@@ -73,13 +74,12 @@ class FeedforwardNetwork(nn.Module):
 
             #if not iterating output layer, add activation and dropout
             if not is_output_layer:
-                network_layers.append(activation_function)
-                if dropout > 0.0: network_layers.append(nn.Dropout(dropout))
+                ffn_sequence.append(activation_function)
+                if dropout > 0.0: ffn_sequence.append(nn.Dropout(dropout))
 
-        # Register the layers as a Sequential module
-        self.ffn = nn.Sequential(*network_layers)
+        self.ffn = nn.Sequential(*ffn_sequence)
 
-
+    #wont be called directly, but model(x) takes use of this forward method. default definition in nn.Module exists but not built
     def forward(self, x, **kwargs):
         """ Compute a forward pass through the FFN
         Args:
@@ -87,7 +87,9 @@ class FeedforwardNetwork(nn.Module):
         Returns:
             scores (torch.Tensor)
         """
-        raise NotImplementedError()
+        #outpu will be format (batch_size x n_classes). On each row, each value is a score associated
+        #witha  respective class n_j, j the column index
+        return self.ffn(x)
     
     
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
@@ -101,7 +103,20 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     Returns:
         loss (float)
     """
-    raise NotImplementedError()
+
+    #clean the optimizer before calculating gradient for the current batch
+    optimizer.zero_grad()
+    # calls forward method which activates the sequential. shape: (n_examples x n_classes), values are scores for the classes
+    outputs = model(X, **kwargs)
+    # calculate total loss between predictions and true labels. We will return this value to see loss before training
+    # loss is a 0-dimensions tensor
+    loss = criterion(outputs, y)
+    #applying backward() to tensor loss, torch backdates the used tensors to calculate loss, resulting in the dL/dW for each layer
+    loss.backward()
+    #updates model parameters according to W -> W - n * dL/dW. optimizer has access to the model parameters in its definition
+    optimizer.step()
+
+    return loss.item() #item is so that instead of 0-dim tensor we get float
 
 
 def predict(model, X):
@@ -112,7 +127,12 @@ def predict(model, X):
     Returns:
         preds: (n_examples)
     """
-    raise NotImplementedError()
+    # calls forward method which activates the sequential. shape: (n_examples x n_classes), values are scores for the classes
+    scores = model(X)
+    #the prediction is the argmax of the classes scores for a given input. (n_examples).
+    # (row, col), dim = -1 is col, meaning that the comparison will be made along columns, comparing elements in the same row
+    predicted_labels = scores.argmax(dim=-1)
+    return predicted_labels
 
 
 @torch.no_grad()
@@ -126,8 +146,21 @@ def evaluate(model, X, y, criterion):
     Returns:
         loss, accuracy (Tuple[float, float])
     """
-    raise NotImplementedError()
 
+    #changes the model to evaluation mode, deactivates dropout and metrics calculated that can be used for optimization
+    model.eval()
+    #get output scores. shape: (n_examples x n_classes)
+    outputs = model(X)
+    # calculate total loss between predictions and true labels. We will return this value to see loss before training
+    # loss is a 0-dimensions tensor, will return loss.item() so its a float
+    loss = criterion(outputs, y)
+    #more efficient to obtain predictions like this than using predict function, would recalculate outputs. shape: (n_examples)
+    y_hat = outputs.argmax(dim=-1)
+    #number of correct predictions. shapes match equal: (n_examples)
+    n_correct_predictions = (y == y_hat).sum().item()
+    #accuracy: number of correct predictions / number of total predictions. could do y_hat.shape[0] or y.shape[0]
+    accuracy = n_correct_predictions / y_hat.shape[0]
+    return loss.item(), accuracy
 
 def plot(epochs, plottables, filename=None, ylim=None):
     """Plot the plottables over the epochs.
@@ -170,7 +203,7 @@ def main():
     dataset = utils.ClassificationDataset(data)
     train_dataloader = DataLoader(
         dataset, batch_size=opt.batch_size, shuffle=True, generator=torch.Generator().manual_seed(42))
-    train_X, train_y = dataset.train_X, dataset.train_y
+    train_X, train_y = dataset.X, dataset.y # (changed) train_X -> X, train_y -> y 
     dev_X, dev_y = dataset.dev_X, dataset.dev_y
     test_X, test_y = dataset.test_X, dataset.test_y
 
