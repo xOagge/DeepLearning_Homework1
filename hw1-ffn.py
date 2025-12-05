@@ -15,7 +15,7 @@ import utils
 
 class FeedforwardNetwork(nn.Module):
     def __init__(
-            self, t, n_features, hidden_size, layers,
+            self, n_classes, n_features, hidden_size, layers,
             activation_type, dropout, **kwargs):
         """ Define a vanilla multiple-layer FFN with `layers` hidden layers 
         Args:
@@ -27,8 +27,58 @@ class FeedforwardNetwork(nn.Module):
             dropout (float): dropout probability
         """
         super().__init__()
-        
-        raise NotImplementedError()
+
+        #  --- Define activation functions mapping ---
+
+        # Map activation_type (str) to PyTorch definitions of respective activation functions
+        activation_map = {
+            'relu': nn.ReLU(),
+            'tanh': nn.Tanh(),
+        }
+        activation_function
+        # verify if the activation_type (str) is defined in the map. Otherwise, default ReLU
+        if activation_type.lower() not in activation_map:
+            print(
+                f"activation_type: '{activation_type}', is not defined. "
+                f"activation_type will be defaulted to ReLU."
+                f"Available options: {list(activation_map.keys())}"
+            )
+            activation_function = activation_map['relu']
+        #define activation function respective to activation_type (str) by taking its .lower() version
+        else:
+            activation_function = activation_map[activation_type.lower()]
+
+        #  --- Define number of inputs and outputs for each layer---
+
+        #first Hidden layer: Inputs n_features, the number of features of a single input.
+        #Other Hidden layer: Inputs hidden_size, input layer and hidden layer output hidden_size number of outputs
+        #Other Hidden layer: Outputs hidden_size, which is the number of neurons in the hidden layer, so it strictly outputs hidden_size number of outputs
+        #Output layer: Inputs hidden_size, number of outputs of the last hidden layer
+        #Output layer: Outputs n_classes, number of classes we are classifying with this FFN
+        in_sizes = [n_features] + [hidden_size] * layers
+        out_sizes = [hidden_size] * layers + [n_classes]
+
+        #  --- Build the Network structure ---
+        network_layers = []
+
+        # Iterate through input and output sizes to generate linear layers with defined n_in inputs and n_out outputs
+        # i is the index of the layer we are creating in a loop
+        for i, (n_in, n_out) in enumerate(zip(in_sizes, out_sizes)):
+            # create linear layer and add to network_layers
+            network_layers.append(nn.Linear(n_in, n_out))
+            
+            # if the current layer index is equal to the last possible index, given by len(in_sizes) - 1 or len(out_sizes) - 1
+            # then we are currently iterating the output layer, which we dont want to apply Dropout or activation function after
+            is_output_layer = (i == len(in_sizes) - 1)
+
+            #if not iterating output layer, add activation and dropout
+            if not is_output_layer:
+                network_layers.append(activation_function)
+                if dropout > 0.0: network_layers.append(nn.Dropout(dropout))
+
+        # Register the layers as a Sequential module
+        self.ffn = nn.Sequential(*network_layers)
+
 
     def forward(self, x, **kwargs):
         """ Compute a forward pass through the FFN

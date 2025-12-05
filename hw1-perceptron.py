@@ -231,7 +231,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', default=20, type=int,
+    parser.add_argument('--epochs', default=100, type=int,
                         help="""Number of epochs to train for.""")
     parser.add_argument('--data-path', type=str, default="emnist-letters.npz")
     parser.add_argument("--seed", type=int, default=42)
