@@ -1,0 +1,6 @@
+depth,hidden_size,activation_type,dropout,optimizer_name,learning_rate,l2_val,best_val_acc
+1,32,relu,0.0,sgd,0.005,0.0,0.7784615384615384
+3,32,relu,0.0,sgd,0.005,0.0,0.8117307692307693
+5,32,relu,0.0,sgd,0.005,0.0,0.7663942307692307
+7,32,relu,0.0,sgd,0.005,0.0,0.29923076923076924
+9,32,relu,0.0,sgd,0.005,0.0,0.04
