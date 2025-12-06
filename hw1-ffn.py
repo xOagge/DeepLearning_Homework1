@@ -195,6 +195,7 @@ def main():
     parser.add_argument('-optimizer',
                         choices=['sgd', 'adam'], default='sgd')
     parser.add_argument('-data_path', type=str, default='emnist-letters.npz',)
+    parser.add_argument('--model', type=str, default='ffn', help='Model name for plotting')
     opt = parser.parse_args()
 
     utils.configure_seed(seed=42)
@@ -295,11 +296,22 @@ def main():
         "Valid Loss": valid_losses,
     }
 
-    plot(epochs, losses, filename=f'{opt.model}-training-loss-{config}.pdf')
+    accs = {
+        "Train Accuracy": train_accs,
+        "Valid Accuracy": valid_accs
+    }
+
+    # slice to skip initial evaluation
+    plot_epochs = epochs  # epochs already starts from 1
+    plot_losses = {k: v[1:] for k, v in losses.items()}
+    plot_accs   = {k: v[1:] for k, v in accs.items()}
+
+    output_folder = "Q2_outputs"
+
+    plot(plot_epochs, plot_losses, filename=f'{output_folder}/losses-{config}.pdf')
+    plot(plot_epochs, plot_accs, filename=f'{output_folder}/accs-{config}.pdf')
     print(f"Final Training Accuracy: {train_accs[-1]:.4f}")
     print(f"Best Validation Accuracy: {max(valid_accs):.4f}")
-    val_accuracy = { "Valid Accuracy": valid_accs }
-    plot(epochs, val_accuracy, filename=f'{opt.model}-validation-accuracy-{config}.pdf')
 
 
 if __name__ == '__main__':
