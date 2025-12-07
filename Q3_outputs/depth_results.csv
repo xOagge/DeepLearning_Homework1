@@ -1,6 +1,6 @@
-depth,hidden_size,activation_type,dropout,optimizer_name,learning_rate,l2_val,best_val_acc
-1,32,relu,0.0,sgd,0.005,0.0,0.7784615384615384
-3,32,relu,0.0,sgd,0.005,0.0,0.8117307692307693
-5,32,relu,0.0,sgd,0.005,0.0,0.7663942307692307
-7,32,relu,0.0,sgd,0.005,0.0,0.29923076923076924
-9,32,relu,0.0,sgd,0.005,0.0,0.04
+depth,hidden_size,activation_type,dropout,optimizer_name,learning_rate,l2_val,best_val_acc,last_train_acc
+1,32,relu,0.0,sgd,0.15,0.0,0.8417788461538461,0.8577019230769231
+3,32,relu,0.0,sgd,0.15,0.0,0.8606730769230769,0.8786442307692308
+5,32,relu,0.0,sgd,0.15,0.0,0.86,0.8735384615384615
+7,32,relu,0.0,sgd,0.15,0.0,0.8505769230769231,0.875625
+9,32,relu,0.0,sgd,0.15,0.0,0.8463461538461539,0.8636826923076923

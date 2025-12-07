@@ -64,17 +64,23 @@ for L in depths:
 
     criterion = nn.CrossEntropyLoss()
     best_val_acc = 0.0
+    last_train_acc = 0.0  # <--- store training accuracy of last epoch
 
     for ep in range(best_hyperparams["epochs"]):
         model.train()
         for X_batch, y_batch in train_dataloader:
             train_batch(X_batch, y_batch, model, optimizer, criterion)
 
+        # validation accuracy
         _, val_acc = evaluate(model, dev_X, dev_y, criterion)
         if val_acc > best_val_acc:
             best_val_acc = val_acc
 
-    print(f"Depth {L} → Best val acc: {best_val_acc:.4f}")
+        # training accuracy (only store last epoch)
+        if ep == best_hyperparams["epochs"] - 1:
+            _, last_train_acc = evaluate(model, train_X, train_y, criterion)
+
+    print(f"Depth {L} → Best val acc: {best_val_acc:.4f}, Last train acc: {last_train_acc:.4f}")
     results.append({
         "depth": L,
         "hidden_size": best_hyperparams["hidden_size"],
@@ -83,7 +89,8 @@ for L in depths:
         "optimizer_name": best_hyperparams["optimizer_name"],
         "learning_rate": best_hyperparams["learning_rate"],
         "l2_val": best_hyperparams["l2_val"],
-        "best_val_acc": best_val_acc
+        "best_val_acc": best_val_acc,
+        "last_train_acc": last_train_acc  # <--- add to CSV
     })
 
 # Save results

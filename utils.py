@@ -48,7 +48,6 @@ def load_dataset(data_path, bias=False):
         "train": (X_train, y_train), "dev": (X_valid, y_valid), "test": (X_test, y_test),
     }
 
-
 # curve_dict, key is label, value is (x, y)
 def plot(x_label, y_label, curves, filename=None):
     plt.xlabel(x_label)

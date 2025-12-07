@@ -23,6 +23,7 @@ def run_one_config(train_dataloader, train_X, train_y, dev_X, dev_y,
                    n_classes, n_feats, hidden_size, learning_rate, dropout, l2_val,
                    activation_type, optimizer_name, epochs):     
 
+    # define the model with the defined class in hw1_ffn, and the argument data and hyperparameters
     model = FeedforwardNetwork(
         n_classes,
         n_feats,
@@ -32,11 +33,13 @@ def run_one_config(train_dataloader, train_X, train_y, dev_X, dev_y,
         dropout=dropout
     )
 
+    #define optimization method according to optimizer_name
     optims = {"adam": torch.optim.Adam, "sgd": torch.optim.SGD}
     optimizer = optims[optimizer_name](
         model.parameters(), lr=learning_rate, weight_decay=l2_val
     )
 
+    #CrossEntropyLoss is used as it is also used in the skeleton code
     criterion = nn.CrossEntropyLoss()
     best_val_acc = 0.0
 
@@ -152,84 +155,6 @@ def main():
     pd.DataFrame(best_per_width).to_csv(
         f"{OUTPUT_DIR}/best_per_width.csv", index=False
     )
-
-    # ============================================================
-    # Part (b): Identify BEST MODEL across all configs
-    # ============================================================
-
-
-    
-    # best_idx = df["best_val_acc"].idxmax()
-    # best_cfg = df.loc[best_idx]
-
-    # print("\n=========== BEST OVERALL CONFIGURATION ===========\n")
-    # print(best_cfg)
-
-    # # Retrain best model and record curves
-    # train_losses = []
-    # val_accs = []
-
-    # model = FeedforwardNetwork(
-    #     n_classes,
-    #     n_feats,
-    #     int(best_cfg.width),
-    #     layers=1,
-    #     activation_type=opt.activation,
-    #     dropout=best_cfg.dropout
-    # )
-
-    # optims = {"adam": torch.optim.Adam, "sgd": torch.optim.SGD}
-    # optimizer = optims[opt.optimizer](
-    #     model.parameters(),
-    #     lr=best_cfg.learning_rate,
-    #     weight_decay=best_cfg.l2
-    # )
-
-    # criterion = nn.CrossEntropyLoss()
-
-    # for ep in range(1, opt.epochs + 1):
-    #     model.train()
-    #     epoch_loss = 0.0
-
-    #     for X_batch, y_batch in train_dataloader:
-    #         loss = train_batch(X_batch, y_batch, model, optimizer, criterion)
-    #         epoch_loss += loss
-
-    #     train_losses.append(epoch_loss)
-
-    #     # validation accuracy
-    #     _, val_acc = evaluate(model, dev_X, dev_y, criterion)
-    #     val_accs.append(val_acc)
-
-    # # ============================================================
-    # # Save plots
-    # # ============================================================
-    # import matplotlib.pyplot as plt
-
-    # plt.figure()
-    # plt.plot(train_losses)
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Training Loss")
-    # plt.title("Training Loss Curve")
-    # plt.savefig(f"{OUTPUT_DIR}/best_model_train_loss.png")
-    # plt.close()
-
-    # plt.figure()
-    # plt.plot(val_accs)
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Validation Accuracy")
-    # plt.title("Validation Accuracy Curve")
-    # plt.savefig(f"{OUTPUT_DIR}/best_model_val_acc.png")
-    # plt.close()
-
-    # # ============================================================
-    # # Test accuracy
-    # # ============================================================
-    # test_loss, test_acc = evaluate(model, dataset.test_X, dataset.test_y, criterion)
-
-    # print(f"\nTEST ACCURACY OF BEST MODEL: {test_acc:.4f}\n")
-    # print(f"All outputs saved in '{OUTPUT_DIR}/'.")
-
 
 # ============================================================
 # ENTRY
