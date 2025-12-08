@@ -19,9 +19,21 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ============================================================
 # Train one configuration
 # ============================================================
-def run_one_config(train_dataloader, train_X, train_y, dev_X, dev_y,
+def run_one_config(dataset, train_X, train_y, dev_X, dev_y,
                    n_classes, n_feats, hidden_size, learning_rate, dropout, l2_val,
                    activation_type, optimizer_name, epochs):     
+
+    # ------------------------------------------------------------------
+    # CHANGE: Reset Seed and DataLoader inside the function (per config)
+    # This ensures every model gets the exact same initialization state
+    # ------------------------------------------------------------------
+    utils.configure_seed(42)
+
+    train_dataloader = DataLoader(
+        dataset, batch_size=64, shuffle=True,
+        generator=torch.Generator().manual_seed(42)
+    )
+    # ------------------------------------------------------------------
 
     # define the model with the defined class in hw1_ffn, and the argument data and hyperparameters
     model = FeedforwardNetwork(
@@ -69,14 +81,10 @@ def main():
     parser.add_argument('-epochs', type=int, default=30)
     opt = parser.parse_args()
 
-    utils.configure_seed(42)
+    # Load data once (heavy lifting)
+    # Note: We do NOT configure the seed here anymore, as it is done inside run_one_config
     data = utils.load_dataset(opt.data_path)
     dataset = utils.ClassificationDataset(data)
-
-    train_dataloader = DataLoader(
-        dataset, batch_size=64, shuffle=True,
-        generator=torch.Generator().manual_seed(42)
-    )
 
     train_X, train_y = dataset.X, dataset.y
     dev_X, dev_y     = dataset.dev_X, dataset.dev_y
@@ -106,8 +114,9 @@ def main():
             for dr in dropouts:
                 for l2v in l2_vals:
 
+                    # Pass 'dataset' instead of 'train_dataloader'
                     best_val_acc = run_one_config(
-                        train_dataloader, train_X, train_y,
+                        dataset, train_X, train_y,
                         dev_X, dev_y,
                         n_classes, n_feats,
                         hidden_size=width,

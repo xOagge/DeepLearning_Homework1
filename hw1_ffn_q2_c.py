@@ -14,14 +14,9 @@ def main():
     # --------------------------
     # Load dataset
     # --------------------------
-    utils.configure_seed(42)
+    # We load the dataset object once because the data content doesn't change
     data = utils.load_dataset("emnist-letters.npz")
     dataset = utils.ClassificationDataset(data)
-
-    train_dataloader = DataLoader(
-        dataset, batch_size=64, shuffle=True,
-        generator=torch.Generator().manual_seed(42)
-    )
 
     train_X, train_y = dataset.X, dataset.y
     n_classes = torch.unique(dataset.y).shape[0]
@@ -43,6 +38,20 @@ def main():
         dropout = float(row.dropout)
         learning_rate = float(row.learning_rate)
         l2_val = float(row.l2)
+
+        print(f"Training Width {width} (LR={learning_rate}, Drop={dropout}, L2={l2_val})...")
+
+        # -------------------------------------------------------------
+        # CHANGE: Reset Seed and DataLoader for every model
+        # This ensures each model starts with the exact same state (seed 42)
+        # -------------------------------------------------------------
+        utils.configure_seed(42)
+
+        train_dataloader = DataLoader(
+            dataset, batch_size=64, shuffle=True,
+            generator=torch.Generator().manual_seed(42)
+        )
+        # -------------------------------------------------------------
 
         model = FeedforwardNetwork(
             n_classes,
@@ -72,7 +81,7 @@ def main():
         widths.append(width)
         final_train_accs.append(train_acc)
 
-        print(f"Width {width}: final training accuracy = {train_acc:.4f}")
+        print(f"-> Final training accuracy = {train_acc:.4f}")
 
     # --------------------------
     # Plot training accuracy vs width

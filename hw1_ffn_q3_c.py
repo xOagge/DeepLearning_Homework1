@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import utils
 
+utils.configure_seed(43)
+
 # ============================================================
 OUTPUT_DIR = "Q3_outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)

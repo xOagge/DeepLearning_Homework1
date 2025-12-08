@@ -7,17 +7,14 @@ import utils
 from hw1_ffn import FeedforwardNetwork, train_batch, evaluate
 
 # ============================================================
+# Setup
+# ============================================================
 OUTPUT_DIR = "Q3_outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ============================================================
-# Load data
+# Load data once (heavy lifting)
 data = utils.load_dataset("emnist-letters.npz")
 dataset = utils.ClassificationDataset(data)
-train_dataloader = DataLoader(
-    dataset, batch_size=64, shuffle=True,
-    generator=torch.Generator().manual_seed(42)
-)
 train_X, train_y = dataset.X, dataset.y
 dev_X, dev_y     = dataset.dev_X, dataset.dev_y
 
@@ -25,13 +22,14 @@ n_classes = torch.unique(dataset.y).shape[0]
 n_feats   = dataset.X.shape[1]
 
 # ============================================================
-# Depth settings
+# Depth settings & Hyperparameters
+# ============================================================
 depths = [1, 3, 5, 7, 9]
 
+# Load best hyperparameters from Q2
 df = pd.read_csv("Q2_outputs/best_per_width.csv")
 best_32_unit = df[df['width'] == 32].iloc[0]
 
-# Best hyperparameters from previous 32-unit model
 best_hyperparams = {
     "hidden_size": 32,
     "activation_type": best_32_unit["activation"] if "activation" in best_32_unit else "relu",
@@ -42,11 +40,23 @@ best_hyperparams = {
     "epochs": 30
 }
 
-# ============================================================
 results = []
 
 for L in depths:
     print(f"\nTraining depth = {L}")
+    
+    # -------------------------------------------------------------
+    # CRITICAL CHANGE: Reset Seed and DataLoader for every depth
+    # This ensures each depth experiment is independent.
+    # -------------------------------------------------------------
+    utils.configure_seed(43)
+    
+    train_dataloader = DataLoader(
+        dataset, batch_size=64, shuffle=True,
+        generator=torch.Generator().manual_seed(43)
+    )
+    # -------------------------------------------------------------
+
     model = FeedforwardNetwork(
         n_classes, n_feats,
         hidden_size=best_hyperparams["hidden_size"],
@@ -64,19 +74,19 @@ for L in depths:
 
     criterion = nn.CrossEntropyLoss()
     best_val_acc = 0.0
-    last_train_acc = 0.0  # <--- store training accuracy of last epoch
+    last_train_acc = 0.0
 
     for ep in range(best_hyperparams["epochs"]):
         model.train()
         for X_batch, y_batch in train_dataloader:
             train_batch(X_batch, y_batch, model, optimizer, criterion)
 
-        # validation accuracy
+        # Validation accuracy
         _, val_acc = evaluate(model, dev_X, dev_y, criterion)
         if val_acc > best_val_acc:
             best_val_acc = val_acc
 
-        # training accuracy (only store last epoch)
+        # Store last epoch training accuracy
         if ep == best_hyperparams["epochs"] - 1:
             _, last_train_acc = evaluate(model, train_X, train_y, criterion)
 
@@ -90,7 +100,7 @@ for L in depths:
         "learning_rate": best_hyperparams["learning_rate"],
         "l2_val": best_hyperparams["l2_val"],
         "best_val_acc": best_val_acc,
-        "last_train_acc": last_train_acc  # <--- add to CSV
+        "last_train_acc": last_train_acc
     })
 
 # Save results

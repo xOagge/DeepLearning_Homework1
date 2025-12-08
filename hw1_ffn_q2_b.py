@@ -18,6 +18,7 @@ def main():
     batch_size = 64
 
     # ==================== Load data ====================
+    # Reset seed to 42 to match the initialization used in q2_a
     utils.configure_seed(42)
     data = utils.load_dataset(data_path)
     dataset = utils.ClassificationDataset(data)
@@ -29,11 +30,13 @@ def main():
 
     train_X, train_y = dataset.X, dataset.y
     dev_X, dev_y     = dataset.dev_X, dataset.dev_y
+    test_X, test_y   = dataset.test_X, dataset.test_y
 
     n_classes = torch.unique(dataset.y).shape[0]
     n_feats   = dataset.X.shape[1]
 
     # ==================== Load best config ====================
+    # Reads the results from part (a) to find the best configuration
     df = pd.read_csv(f"{OUTPUT_DIR}/results.csv")
     best_idx = df["best_val_acc"].idxmax()
     best_cfg = df.loc[best_idx]
@@ -63,13 +66,16 @@ def main():
     train_losses, val_accs = [], []
     best_val_acc = 0.0
     best_model_state = None
+    best_epoch = 0
 
     for ep in range(1, epochs + 1):
         model.train()
         epoch_loss = 0.0
+        
         for X_batch, y_batch in train_dataloader:
             loss = train_batch(X_batch, y_batch, model, optimizer, criterion)
             epoch_loss += loss
+            
         train_losses.append(epoch_loss)
 
         _, val_acc = evaluate(model, dev_X, dev_y, criterion)
@@ -78,6 +84,7 @@ def main():
         # Save model state if validation accuracy improves
         if val_acc > best_val_acc:
             best_val_acc = val_acc
+            best_epoch = ep
             best_model_state = model.state_dict().copy()
 
     # ==================== Plotting ====================
@@ -96,12 +103,31 @@ def main():
         filename=f"{OUTPUT_DIR}/best_model_val_acc.png"
     )
 
-    # ==================== Test Accuracy ====================
-    # Load best model (epoch with highest validation accuracy)
+    # ==================== Test Accuracy & Reporting ====================
+    # Load the best model (from the epoch with highest validation accuracy)
     model.load_state_dict(best_model_state)
-    test_loss, test_acc = evaluate(model, dataset.test_X, dataset.test_y, criterion)
-    print(f"\nTEST ACCURACY OF BEST MODEL (epoch with max val acc): {test_acc:.4f}")
-    print(f"All outputs saved in '{OUTPUT_DIR}/'.")
+    _, test_acc = evaluate(model, test_X, test_y, criterion)
+
+    print(f"\n=========== RESULTS FOR BEST MODEL ===========")
+    print(f"Best Validation Accuracy: {best_val_acc:.4f} (at Epoch {best_epoch})")
+    print(f"Test Accuracy:            {test_acc:.4f}")
+    print(f"Plots and metrics saved in '{OUTPUT_DIR}/'.")
+
+    # ==================== Save to CSV ====================
+    results_data = {
+        "best_val_acc": [best_val_acc],
+        "test_acc": [test_acc],
+        "best_epoch": [best_epoch],
+        "width": [best_cfg.width],
+        "learning_rate": [best_cfg.learning_rate],
+        "dropout": [best_cfg.dropout],
+        "l2": [best_cfg.l2]
+    }
+    
+    results_df = pd.DataFrame(results_data)
+    results_csv_path = f"{OUTPUT_DIR}/best_model_metrics.csv"
+    results_df.to_csv(results_csv_path, index=False)
+    print(f"Metrics CSV saved to: {results_csv_path}")
 
 if __name__ == "__main__":
     main()
