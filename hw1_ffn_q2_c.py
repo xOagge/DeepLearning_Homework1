@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pandas as pd
 import utils
+import hw1_ffn_utils as ffn_utils
 
 from hw1_ffn import FeedforwardNetwork, train_batch, evaluate
 
@@ -11,64 +12,39 @@ OUTPUT_DIR = "Q2_outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def main():
-    # --------------------------
-    # Load dataset
-    # --------------------------
-    # We load the dataset object once because the data content doesn't change
-    data = utils.load_dataset("emnist-letters.npz")
-    dataset = utils.ClassificationDataset(data)
+    #load data, get datasets, n_classes, n_feats
+    dataset, n_classes, n_feats = ffn_utils.setup_data()
 
     train_X, train_y = dataset.X, dataset.y
-    n_classes = torch.unique(dataset.y).shape[0]
-    n_feats = dataset.X.shape[1]
 
-    # --------------------------
-    # Load best per width from CSV
-    # --------------------------
+    # get the best results per width hyperparameters
     df = pd.read_csv(f"{OUTPUT_DIR}/best_per_width.csv")
-
+    
+    # for each model retrain with same seed and retrive the final training accuracy
     widths = []
     final_train_accs = []
-
-    # --------------------------
-    # For each width, retrain the best config
-    # --------------------------
+    # index and row, dotn want index
     for _, row in df.iterrows():
+        #get variable hyperparameters
         width = int(row.width)
         dropout = float(row.dropout)
         learning_rate = float(row.learning_rate)
         l2_val = float(row.l2)
 
-        print(f"Training Width {width} (LR={learning_rate}, Drop={dropout}, L2={l2_val})...")
+        #print to sanity check
+        print(f"Training Width {width} (LR={learning_rate}, Drop={dropout}, L2={l2_val})")
 
-        # -------------------------------------------------------------
-        # CHANGE: Reset Seed and DataLoader for every model
-        # This ensures each model starts with the exact same state (seed 42)
-        # -------------------------------------------------------------
-        utils.configure_seed(42)
+        #as stated before, important to reset the seed to the same value (42 choosen)
+        # to make sure simulations are the same
+        train_dataloader = ffn_utils.get_dataloader(dataset, batch_size=64, seed=42)
 
-        train_dataloader = DataLoader(
-            dataset, batch_size=64, shuffle=True,
-            generator=torch.Generator().manual_seed(42)
+        #model and optimizer defined as before, relu, 1 layer, SGD optimizer
+        #same criterion as before
+        model, optimizer, criterion = ffn_utils.setup_model_and_optimizer(
+            n_classes, n_feats, hidden_size=width,
+            layers=1, activation_type="relu", dropout=dropout,
+            optimizer_name="sgd", learning_rate=learning_rate, l2_val=l2_val
         )
-        # -------------------------------------------------------------
-
-        model = FeedforwardNetwork(
-            n_classes,
-            n_feats,
-            hidden_size=width,
-            layers=1,
-            activation_type="relu",  # fixed for project
-            dropout=dropout
-        )
-
-        optimizer = torch.optim.SGD(
-            model.parameters(),
-            lr=learning_rate,
-            weight_decay=l2_val
-        )
-
-        criterion = nn.CrossEntropyLoss()
 
         # Train for 30 epochs
         for _ in range(30):
@@ -77,15 +53,13 @@ def main():
                 train_batch(X_batch, y_batch, model, optimizer, criterion)
 
         # Evaluate final training accuracy
-        _, train_acc = evaluate(model, train_X, train_y, criterion)
+        train_acc = evaluate(model, train_X, train_y, criterion)[1]
         widths.append(width)
         final_train_accs.append(train_acc)
 
-        print(f"-> Final training accuracy = {train_acc:.4f}")
+        print(f"Final training accuracy: {train_acc:.4f}")
 
-    # --------------------------
-    # Plot training accuracy vs width
-    # --------------------------
+    #plot the final training accuracy as function of the width of the model
     curve_dict = {
         "Training Accuracy": (widths, final_train_accs)
     }
