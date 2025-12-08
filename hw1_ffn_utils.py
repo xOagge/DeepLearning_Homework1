@@ -33,21 +33,16 @@ def setup_model_and_optimizer(n_classes, n_feats, hidden_size, layers,
     """
     Initializes the model, optimizer, and loss function in one go.
     """
-    # 1. Define Model
+    # create the model with the defined structure and hyperparameters
     model = FeedforwardNetwork( n_classes=n_classes, n_features=n_feats,
         hidden_size=hidden_size, layers=layers, activation_type=activation_type,
         dropout=dropout
     )
 
-    #define the optimizer with received optimizer_name
+    # define optimizer. if the argument string is not one of the available ones, give error
     optims = {"adam": torch.optim.Adam, "sgd": torch.optim.SGD}
     if optimizer_name not in optims: raise ValueError(f"Optimizer {optimizer_name} not supported")
-        
-    optimizer = optims[optimizer_name](
-        model.parameters(), 
-        lr=learning_rate, 
-        weight_decay=l2_val
-    )
+    optimizer = optims[optimizer_name]( model.parameters(), lr=learning_rate, weight_decay=l2_val)
 
     # criterion is defined as cross entropy for the whole Q2 as is in the skeleton
     criterion = nn.CrossEntropyLoss()
