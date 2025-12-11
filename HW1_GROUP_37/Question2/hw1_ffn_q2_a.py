@@ -66,32 +66,11 @@ def main():
 
     #load data, get datasets, n_classes, n_feats
     dataset, n_classes, n_feats = ffn_utils.setup_data()
-
-    #extract the train dataset, to train the model
-    train_X, train_y = dataset.X, dataset.y
     #extract the dev/valdiation set, to benchmark the models in the grid search
     dev_X, dev_y     = dataset.dev_X, dataset.dev_y
 
 
-    # # Grid hyperparameters used in the first report model. All best per width dont use dropout or L2, so will change
-    # widths = [16, 32, 64, 128, 256]
-    # learning_rates = [0.02, 0.05, 0.08, 0.15] #used for third trial
-    # dropouts = [0.0, 0.5] #used for second trial and third trial
-    # l2_vals  = [0.0, 0.01] #used for second trial and third trial
-
-    #grid parameters for second_valid_batch. All the best epochs are leraning rate = 0.15, so will increase
-    # widths = [16, 32, 64, 128, 256]
-    # learning_rates = [0.02, 0.05, 0.08, 0.15] 
-    # dropouts = [0.0, 0.1] 
-    # l2_vals  = [0.0, 1e-4] 
-
-    #grid parameters for third_valid_batch. apparently until now the learning rates were too aggressive, lets try something different
-    # widths = [16, 32, 64, 128, 256]
-    # learning_rates = [0.12, 0.15, 0.18, 0.20]
-    # dropouts = [0.0, 0.1] 
-    # l2_vals  = [0.0, 1e-4] 
-
-    #im going to kill myself
+    #grid search hyperparameters
     widths = [16, 32, 64, 128, 256]
     learning_rates = [0.09, 0.12, 0.15, 0.17]
     dropouts = [0.0, 0.1]
@@ -99,7 +78,7 @@ def main():
 
     results = []
 
-    # do the grid seach for every combination of hyperparameters: 80 combinations
+    # do the grid seach for every combination of hyperparameters. 80 combinations
     for width in widths:
         print(f"\n=== WIDTH = {width} ===")
         for lr in learning_rates:
@@ -121,7 +100,7 @@ def main():
                     })
 
                     #print just to see progress of running code
-                    print(f"    lr={lr} dr={dr} l2={l2v} → best_val_acc={best_val_acc:.4f}")
+                    print(f"   lr={lr} dr={dr} l2={l2v} → best_val_acc={best_val_acc:.4f}")
 
     #using panda library to store the results in a csv so we dont need to constantly run this code
     # (very time consuming), and more efficient.
@@ -147,13 +126,3 @@ def main():
 # main :)
 if __name__ == "__main__":
     main()
-
-
-
-#PARAMETERS USED ON BIN BATCHES
-#comment store other batches grid hyperparameters
-#learning_rates = [0.0005, 0.001, 0.002, 0.005] #used for first trial
-#learning_rates = [0.001, 0.005, 0.01, 0.02] #used for second trial
-#dropouts = [0.0, 0.3] #used for first trial
-#l2_vals  = [0.0, 0.001] #used for first trial
-#l2_vals  = [0.0, 0.001] #used for first trial
