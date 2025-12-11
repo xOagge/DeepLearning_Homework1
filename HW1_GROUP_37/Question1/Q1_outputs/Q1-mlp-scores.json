@@ -1,0 +1,19 @@
+{
+    "architecture": {
+        "input_features": 784,
+        "hidden_units": 100,
+        "output_classes": 26,
+        "activation": "relu"
+    },
+    "hyperparameters": {
+        "learning_rate": 0.001,
+        "epochs": 20,
+        "batch_size": 1
+    },
+    "results": {
+        "best_valid_acc": 0.8826923076923077,
+        "best_epoch": 20,
+        "test_acc": 0.8798557692307692
+    },
+    "training_time_seconds": 434.5269570350647
+}

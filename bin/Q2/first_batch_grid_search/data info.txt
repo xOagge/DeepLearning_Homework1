@@ -1,0 +1,1 @@
+done with reLU activation nd SGD optimization method

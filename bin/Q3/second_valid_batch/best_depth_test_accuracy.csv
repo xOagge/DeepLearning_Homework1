@@ -1,0 +1,2 @@
+best_depth,epoch_best_val,best_val_accuracy,test_accuracy_at_best_val,last_train_acc
+3,27,0.8670192307692308,0.8656730769230769,0.8798942307692308

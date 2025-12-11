@@ -41,7 +41,7 @@ for key, val in hyper.items():
 print("=================================\n")
 
 #seed, define model, optimizer, criterion, train loader, as in the other exercises
-train_loader = ffn_utils.get_dataloader(dataset, batch_size=64, seed=43)
+train_loader = ffn_utils.get_dataloader(dataset, batch_size=64, seed=52)
 model, optimizer, criterion = ffn_utils.setup_model_and_optimizer(
     n_classes, n_feats, hidden_size=hyper["hidden_size"],
     layers=best_depth, activation_type=hyper["activation_type"],

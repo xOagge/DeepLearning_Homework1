@@ -39,8 +39,8 @@ results = []
 for L in depths:
     print(f"\nTraining depth = {L}")
     
-    #reset seed before every model run. for Q2.3 we use seed 43, developer use of free will :)
-    train_dataloader = ffn_utils.get_dataloader(dataset, batch_size=64, seed=43)
+    #reset seed before every model run. for Q2.3 we use seed 52, developer use of free will :)
+    train_dataloader = ffn_utils.get_dataloader(dataset, batch_size=64, seed=52)
 
     #define model, optimizer, criterion
     model, optimizer, criterion = ffn_utils.setup_model_and_optimizer(
